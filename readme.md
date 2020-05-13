@@ -129,7 +129,7 @@ MetaPhlAn3默认加入了UNKNOWN的结果，在1.assay/03.profile/metaphlan3/下
 更多profile的方法见综述[Benchmarking Metagenomics Tools for Taxonomic Classification](https://www.cell.com/cell/fulltext/S0092-8674(19)30775-5?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867419307755%3Fshowall%3Dtrue)。
 
 ### 3. Dedug
-1. fastp缺少zlib文件。
+#### 3.1 fastp缺少zlib文件。
 ``` shell
 ./fastp: /lib64/libz.so.1: version `ZLIB_1.2.3.5' not found (required by ./fastp)
 ```
@@ -140,7 +140,7 @@ ZLIB_HOME=/ldfssz1/ST_META/P18Z10200N0127_VC/tianliu/bin/lib/zlib-1.2.11
 export LD_LIBRARY_PATH=$ZLIB_HOME:$LD_LIBRARY_PATH
 ```
 
-2. MetaPhlAn3无访问database的权限
+#### 3.2 MetaPhlAn3无访问database的权限
 ```shell
 ERROR: The directory is not writeable: /ldfssz1/ST_META/SHR/opt/MetaPhlAn/metaphlan/metaphlan_databases. Please modify the permissions.
 ```
@@ -148,3 +148,31 @@ ERROR: The directory is not writeable: /ldfssz1/ST_META/SHR/opt/MetaPhlAn/metaph
 将MetaPhlAn3拷贝到自己的工作目录下。
 
 
+#### 3.3 下机数据路径不存在
+snakemake在运行前会检查所有数据路径是否存在。若不存在则会报缺失数据的错误。
+```shell
+MissingInputException in line 4 of rules/profile.smk:
+Missing input files for rule filter:
+0.data/test3.fq.gz
+```
+请依次检查sample.txt是否是按制表符分隔，样本的路径是否完整，路径是否更新过(长周期项目往往会转移数据)。
+
+可以通过check_PE_reads_exist.py检查哪些下机数据路径缺失:
+```shell
+python rules/check_PE_reads_exist.py sample.txt 
+```
+sample.txt.exist为数据路径正常样本；sample.txt.noexist为数据路径缺失样本。
+
+#### 3.4 同一个样本有多个文库的下机数据
+将同一样本的多个下机数据先合并，再跑流程。提供merge_multi_fq.py脚本合并多个下机数据的样本。
+
+将所有多个下机数据的样本按sample.txt的格式整理为sample_dup.txt文件，该文件中不包含单样本单文库的样本。merge_multi_fq.py脚本将按id合并fq文件，合并后的下机数据保存在1.assay/00.tmp中。
+
+如test样本测了两个文库，希望将这两个文库合并后再跑程序，则sample_dup.txt的内容应为:
+id	fq1	fq2
+test	0.data/test1_1.fq.gz	0.data/test1_2.fq.gz
+test	0.data/test2_1.fq.gz	0.data/test2_2.fq.gz
+```shell
+python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt 
+```
+将rules/profile.smk的21行中的sample.txt替换成sample_dup_merge.txt后，再运行流程即可。
