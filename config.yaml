@@ -5,7 +5,7 @@ params:
       bowtie2_index : "/ldfssz1/ST_META/P18Z10200N0127_VC/tianliu/test/meta_assemble/bowtie2_index/Horse/Horse_bw2_index" 
       threads: 8
     metaphlan3:
-      path: "/ldfssz1/ST_META/P18Z10200N0127_VC/tianliu/bin/tools/metaphlan3" #请将整个mp3文件夹复制到自己的工作路径下并更新此处路径。
+      path: "/ldfssz1/ST_META/P18Z10200N0127_VC/tianliu/bin/tools/metaphlan3" #Copy to your work dir and replace it!
       threads: 4
 
 assay:
