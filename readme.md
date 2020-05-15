@@ -176,3 +176,9 @@ test	0.data/test2_1.fq.gz	0.data/test2_2.fq.gz
 python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt 
 ```
 将rules/profile.smk的21行中的sample.txt替换成sample_dup_merge.txt后，再运行流程即可。
+
+#### 3.5 追加样本后显示Nothing to be done
+
+流程每次检查2.result/filter_summary.txt，和metaphlan3.profile.merge.txt来判断是否执行完毕。因此若在上一批样本跑完了全流程后，再追加样本时由于上两个文件已经生成了，就会显示Nothing to be done。
+
+若已经生成了结果文件，则删去结果文件夹即可。``` rm -r 2.result```。
