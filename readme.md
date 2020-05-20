@@ -27,12 +27,11 @@ export PATH="/ldfssz1/ST_META/share/User/zhujie/.conda/envs/bioenv/bin:$PATH"
 #2.拷贝流程到工作目录
 cp -r /ldfssz1/ST_META/share/User/tianliu/pipline/meta_profile/* /your/path
 
-#3.mp3暂时有bug, database需要写入权限, 将拷贝metaphlan3到工作目录并在config.yaml里替换路径。
-cp -r /ldfssz1/ST_META/SHR/opt/MetaPhlAn/metaphlan /your/tools/path
-
 ```
 
 如果不是的话，推荐使用conda安装管理上述所有的软件。
+
+```conda install python=3.6 fastp bowtie2 samtools seqkit```
 
 #### 1.3 配置文件
 
@@ -145,7 +144,8 @@ export LD_LIBRARY_PATH=$ZLIB_HOME:$LD_LIBRARY_PATH
 ERROR: The directory is not writeable: /ldfssz1/ST_META/SHR/opt/MetaPhlAn/metaphlan/metaphlan_databases. Please modify the permissions.
 ```
 解决方法:
-将MetaPhlAn3拷贝到自己的工作目录下。
+database需要写入权限, 将拷贝metaphlan3到工作目录并在config.yaml里替换路径。
+```cp -r /ldfssz1/ST_META/SHR/opt/MetaPhlAn/metaphlan /your/tools/path```
 
 
 #### 3.3 下机数据路径不存在
