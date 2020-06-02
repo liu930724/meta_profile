@@ -15,16 +15,16 @@ def trim_stat(fastp_json):
     reads_before = OA_json.get('summary').get('before_filtering').get('total_reads')
     bases_before = OA_json.get('summary').get('before_filtering').get('total_bases')
     read_len = OA_json.get('summary').get('before_filtering').get('read1_mean_length') #仅适用于PE
-    q30_before = OA_json.get('summary').get('before_filtering').get('q30_rate')
-    duplication = float(OA_json.get('duplication').get('rate'))
-    res_before = "%s\t%s\t%s\t%s\t%s\t%s\t" %(fastp_sample, reads_before, bases_before, read_len, q30_before, duplication)
+    q30_before = float(OA_json.get('summary').get('before_filtering').get('q30_rate'))*100
+    duplication = float(OA_json.get('duplication').get('rate'))*100
+    res_before = "%s\t%s\t%s\t%s\t%.2f%%\t%.2f%%\t" %(fastp_sample, reads_before, bases_before, read_len, q30_before, duplication)
 
     reads_pass = OA_json.get('summary').get('after_filtering').get('total_reads')
     bases_pass = OA_json.get('summary').get('after_filtering').get('total_bases')
-    q30_after = OA_json.get('summary').get('after_filtering').get('q30_rate')
-    reads_pass_ratio = reads_pass/reads_before
-    bases_pass_ratio = bases_pass/bases_before
-    res_after = "%s\t%s\t%s\t%s\t%s" %(reads_pass, reads_pass_ratio, q30_after, bases_pass, bases_pass_ratio)
+    q30_after = float(OA_json.get('summary').get('after_filtering').get('q30_rate')) * 100
+    reads_pass_ratio = reads_pass/reads_before * 100
+    bases_pass_ratio = bases_pass/bases_before * 100
+    res_after = "%s\t%.2f%%\t%.2f%%\t%s\t%.2f%%" %(reads_pass, reads_pass_ratio, q30_after, bases_pass, bases_pass_ratio)
 
     fastp_res = res_before + res_after
     print(fastp_res)

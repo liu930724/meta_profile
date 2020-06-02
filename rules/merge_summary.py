@@ -16,7 +16,5 @@ df['Nohomo_reads_ratio'] = df['Nohomo_reads_count'] / df['Clean_reads_count']
 df['Nohomo_bases_ratio'] = df['Nohomo_bases_count'] / df['Clean_bases_count']
 df['Nohomo_reads_ratio'] = df['Nohomo_reads_ratio'].apply(lambda x: format(x, '.2%'))
 df['Nohomo_bases_ratio'] = df['Nohomo_bases_ratio'].apply(lambda x: format(x, '.2%'))
-df['Clean_reads_ratio'] = df['Clean_reads_ratio'].apply(lambda x: format(x, '.2%'))
-df['Clean_bases_ratio'] = df['Clean_bases_ratio'].apply(lambda x: format(x, '.2%'))
 
 df.to_csv(merge_file, sep="\t", index = False)
