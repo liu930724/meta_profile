@@ -41,6 +41,8 @@ cp -r /ldfssz1/ST_META/share/User/tianliu/pipline/meta_profile/* /your/path
 
 **config.yaml** : 配置文件，可在此设定各步骤使用的CPU等相关参数，host index以及结果保存的路径。
 
+**默认宿主为人(hg38)，若是其他的宿主，请在config.yaml中更换index**
+
 **cluster.yaml** : 投递任务的配置文件，可在此设置项目编号，任务队列，任务所需资源等参数。
 
 **work.sh** : 投递任务的脚本。
