@@ -1,4 +1,4 @@
-localrules: all, merge_profile, filter_summary
+localrules: all
 
 __default__:
   queue: "st.q"
@@ -23,4 +23,16 @@ seqkit_stat:
   mem: "1G"
   cores: 1
   output: "1.assay/cluster_logs/{rule}.{wildcards}.o"
-  error: "1.assay/cluster_logs/{rule}.{wildcards}.e"   
+  error: "1.assay/cluster_logs/{rule}.{wildcards}.e"
+
+merge_profile:
+  mem: "0.1G"
+  cores: 1
+  output: "1.assay/cluster_logs/{rule}.{wildcards}.o"
+  error: "1.assay/cluster_logs/{rule}.{wildcards}.e"
+
+filter_summary:
+  mem: "0.1G"
+  cores: 1
+  output: "1.assay/cluster_logs/{rule}.{wildcards}.o"
+  error: "1.assay/cluster_logs/{rule}.{wildcards}.e"
