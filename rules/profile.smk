@@ -105,8 +105,11 @@ rule metaphlan3:
 ### step4 profile_summary
 rule merge_profile:
     input:
-        expand("{profile_dir}/{sample}.mp3_unknown.profile", profile_dir = config["assay"]["profile"], sample = _samples.index)
+        unknown = expand("{profile_dir}/{sample}.mp3_unknown.profile", profile_dir = config["assay"]["profile"], sample = _samples.index),
+        vir = expand("{profile_dir}/{sample}.mp3_vir.profile", profile_dir = config["assay"]["profile"], sample = _samples.index)
     output:
-        protected(os.path.join(config['results'], "metaphlan3.profile.merge.txt"))
+        unknown = protected(os.path.join(config['results'], "metaphlan3_unknown.profile.merge.txt")),
+        vir = protected(os.path.join(config['results'], "metaphlan3_vir.profile.merge.txt"))
     shell:
-        "rules/merge_metaphlan_tables.py {input} > {output}"
+        "rules/merge_metaphlan_tables.py {input.unknown} > {output.unknown}"
+        "rules/merge_metaphlan_tables.py {input.vir} > {output.vir}"
