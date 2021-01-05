@@ -95,7 +95,7 @@ cOMG中使用SOAP比对到参考基因组用来去宿主，soap使用的seed为3
 在实际使用中发现，seed值会大大影响宿主率的结果。在高宿主率样本中，seed 30会遗漏很多人源的reads。当然，seed过低也会将微生物的reads误认为是人源的，在部分粪便样本的stLFR数据中发现，BWA默认seed 19会导致10%以上的宿主率，大量reads的match只有19bp，而将seed改到23宿主率则会回归正常的1-3%水平。关于过滤参数的讨论，可以进一步阅读:
 [Aligner optimization increases accuracy and decreases compute times in multi-species sequence data](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5643015/)
 
-本流程使用bowtie2(BWA/bowtie2按个人喜好即可)的--very-sensitive模式比对到参考基因组上，然后通过管道传给samtools -f 12提取PE reads都没有比对上参考基因组的结果。--very-sensitive比对模式在准确度和性能上有较好的平衡。
+本流程使用bowtie2--very-sensitive的全局比对模式比对到参考基因组上，然后通过管道传给samtools -f 12提取PE reads都没有比对上参考基因组的结果。--very-sensitive比对模式在准确度和性能上有较好的平衡。
 
 顺带一提，若组装样本中含有大量真菌，需要考虑对宿主基因组的高度同源区进行屏蔽，避免与宿主同源的真菌序列(eg. 核糖体)在过滤宿主中丢失。该策略详见[BBmap](http://seqanswers.com/forums/showthread.php?t=42552)，不包含在本流程中。
 
@@ -129,7 +129,7 @@ MetaPhlAn3默认加入了UNKNOWN的结果，在1.assay/03.profile/metaphlan3/下
 
 更多profile的方法见综述[Benchmarking Metagenomics Tools for Taxonomic Classification](https://www.cell.com/cell/fulltext/S0092-8674(19)30775-5?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867419307755%3Fshowall%3Dtrue)。
 
-### 3. Dedug
+### 3. Troubleshoot
 #### 3.1 fastp缺少zlib文件。
 ``` shell
 ./fastp: /lib64/libz.so.1: version `ZLIB_1.2.3.5' not found (required by ./fastp)
