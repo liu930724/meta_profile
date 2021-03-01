@@ -1,37 +1,47 @@
 ### 1. meta_profile简介及使用
-
 meta_profile v1.0，集合trimming，remove host，metaphlan3的宏基因组快速profile流程。
 
-#### 1.1 依赖软件:
-
-snakemake (v5.14.0)
-
-python3 (v3.6.10),  pandas
-
-bowtie2 (v2.3.5.1)
-
-samtools (v1.9)
-
-metaphlan3 (v3.0)
-
-seqkit (v0.12.1)
+更全面的宏基因组分析流程见朱杰的metapi。
 
 #### 1.2 安装
-
-如果你在BGI的集群上:
-
++ 使用conda安装相关依赖。conda相关教程见 https://biogit.cn/TianLiu/meta_course/wikis/c1.p3.Conda.
 ```shell
-#1.加载朱杰的工作环境到～/.bashrc
-export PATH="/ldfssz1/ST_META/share/User/zhujie/.conda/envs/bioenv/bin:$PATH"
-
-#2.拷贝流程到工作目录
-cp -r /ldfssz1/ST_META/share/User/tianliu/pipline/meta_profile/* /your/path
-
+conda env create -n meta_profile -f rules/env.yaml
+conda activate meta_profile
 ```
 
-如果不是的话，推荐使用conda安装管理上述所有的软件。
++ 如果你在BGI的集群上，可直接加载工作环境。
+```shell
+# solution1 : use full env path
+conda activate /ldfssz1/ST_META/share/User/tianliu/bioenv/conda/envs/meta_profile
 
-```conda install python=3.6 fastp bowtie2 samtools seqkit```
+# solution2 : use ~/.conda/environments.txt
+echo "/ldfssz1/ST_META/share/User/tianliu/bioenv/conda/envs/meta_profile" >> ~/.conda/environments.txt
+conda activate meta_profile
+```
+
+#### 1.3 数据库
++ 宿主的bowtie2索引文件
+BGI集群上默认为人的GRCh38.p13参考基因组。该基因组已经包括不同地区人的序列亚型。
+```
+#https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.39/
+
+bowtie2-build --threads 4 GCF_000001405.39_GRCh38.p13_genomic.fna.gz hg38
+```
+索引建好后，在config.yaml里更新bowtie2_index的路径。
+
++ metaphlan 数据库
+BGI集群上默认为mpa_v30_CHOCOPhlAn_201901版本数据库。
+```
+#mpa_v30_CHOCOPhlAn_201901
+mkdir metaphlan_database && cd metaphlan_database
+wget http://cmprod1.cibio.unitn.it/biobakery3/metaphlan_databases/mpa_v30_CHOCOPhlAn_201901.tar .
+wget http://cmprod1.cibio.unitn.it/biobakery3/metaphlan_databases/mpa_v30_CHOCOPhlAn_201901.md5 .
+wget http://cmprod1.cibio.unitn.it/biobakery3/metaphlan_databases/mpa_latest .
+
+metaphlan install --bowtie2db .
+```
+安装完毕后，在config.yaml里更新metaphlan3的bowtie2db和index信息。
 
 #### 1.3 配置文件
 
@@ -41,11 +51,12 @@ cp -r /ldfssz1/ST_META/share/User/tianliu/pipline/meta_profile/* /your/path
 
 **config.yaml** : 配置文件，可在此设定各步骤使用的CPU等相关参数，host index以及结果保存的路径。
 
-**默认宿主为人(hg38)，若是其他的宿主，请在config.yaml中更换index**
+**默认宿主为人(hg38.p13)，若是其他的宿主，请在config.yaml中更换index**
 
 **cluster.yaml** : 投递任务的配置文件，可在此设置项目编号，任务队列，任务所需资源等参数。
 
 **work.sh** : 投递任务的脚本。
+
 
 #### 1.4 运行
 
@@ -86,7 +97,7 @@ nohup sh work.sh &
 
 早期BGISEQ测序平台下机reads中间部分会出现零散的质量较差的碱基，cOMG流程中的OAs1修剪方案专门针对此情况进行了优化。OAs1会从头识别整段read，若中间出现低质量碱基，则会修剪掉后半段碱基。该策略会尽可能保留多的reads，但会损失大量的base(>10%)。Reads更多有利于profiling，但损失大量的base不利于组装。
 
-现在BGISEQ测序平台的测序质量已经大大提高，并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。BGISEQ测序平台下机默认去除了街头序列。
+现在BGISEQ测序平台的测序质量已经大大提高，总体Q30%已经到了90%。并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。BGISEQ测序平台下机默认去除了接头序列，无需再对接头进行处理。
 
 #### 2.2 Remove host component
 
@@ -95,13 +106,15 @@ cOMG中使用SOAP比对到参考基因组用来去宿主，soap使用的seed为3
 在实际使用中发现，seed值会大大影响宿主率的结果。在高宿主率样本中，seed 30会遗漏很多人源的reads。当然，seed过低也会将微生物的reads误认为是人源的，在部分粪便样本的stLFR数据中发现，BWA默认seed 19会导致10%以上的宿主率，大量reads的match只有19bp，而将seed改到23宿主率则会回归正常的1-3%水平。关于过滤参数的讨论，可以进一步阅读:
 [Aligner optimization increases accuracy and decreases compute times in multi-species sequence data](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5643015/)
 
-本流程使用bowtie2(BWA/bowtie2按个人喜好即可)的--very-sensitive模式比对到参考基因组上，然后通过管道传给samtools -f 12提取PE reads都没有比对上参考基因组的结果。--very-sensitive比对模式在准确度和性能上有较好的平衡。
+本流程使用bowtie2的--very-sensitive模式比对到参考基因组上，然后通过管道传给samtools -f 12提取PE reads都没有比对上参考基因组的结果。--very-sensitive比对模式在准确度和性能上有较好的平衡。
 
-顺带一提，若组装样本中含有大量真菌，需要考虑对宿主基因组的高度同源区进行屏蔽，避免与宿主同源的真菌序列(eg. 核糖体)在过滤宿主中丢失。该策略详见[BBmap](http://seqanswers.com/forums/showthread.php?t=42552)，不包含在本流程中。
+顺带一提，若组装样本中含有大量真菌，需要考虑对宿主基因组的高度同源区进行屏蔽，避免与宿主同源的真菌序列(eg. 核糖体)在过滤宿主中丢失，影响真菌的组装。该策略详见[BBmap](http://seqanswers.com/forums/showthread.php?t=42552)，该策略不包含在本流程中。
 
 #### 2.3 MetaPhlAn3
 
 MetaPhlAn基于marker基因，可以快速生成样本的profile，并且计算资源消耗低，现已推出第三版，新版本的bowtie2中间结果文件与MetaPhlAn2并不兼容。
+
+MetaPhlAn relies on unique clade-specific marker genes identified from ~17,000 reference genomes (~13,500 bacterial and archaeal, ~3,500 viral, and ~110 eukaryotic).
 
 **What's new in version 3**
 
@@ -121,15 +134,9 @@ MetaPhlAn基于marker基因，可以快速生成样本的profile，并且计算�
 
 - Removal of reads with low MAPQ values
 
-  
+由于数据库中病毒的clade基因较少，metaphlan得到的病毒的profile并不准确，仅供参考。病毒的profile现在暂无公认流程。
 
-使用时需注意将整个文件夹拷贝到自己的工作目录下，否则会出现database无法写入的错误。
-
-MetaPhlAn3默认加入了UNKNOWN的结果，在1.assay/03.profile/metaphlan3/下同时保存着有无UNKNOWN的结果，merge_profile结果是按有UNKNOWN结果合并的，大家按需取用。
-
-更多profile的方法见综述[Benchmarking Metagenomics Tools for Taxonomic Classification](https://www.cell.com/cell/fulltext/S0092-8674(19)30775-5?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867419307755%3Fshowall%3Dtrue)。
-
-### 3. Dedug
+### 3. Troubleshooting
 #### 3.1 fastp缺少zlib文件。
 ``` shell
 ./fastp: /lib64/libz.so.1: version `ZLIB_1.2.3.5' not found (required by ./fastp)
@@ -161,7 +168,7 @@ Missing input files for rule filter:
 
 可以通过check_PE_reads_exist.py检查哪些下机数据路径缺失:
 ```shell
-python rules/check_PE_reads_exist.py sample.txt 
+python rules/check_PE_reads_exist.py sample.txt
 ```
 sample.txt.exist为数据路径正常样本；sample.txt.noexist为数据路径缺失样本。
 
@@ -175,7 +182,7 @@ id	fq1	fq2
 test	0.data/test1_1.fq.gz	0.data/test1_2.fq.gz
 test	0.data/test2_1.fq.gz	0.data/test2_2.fq.gz
 ```shell
-python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt 
+python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt
 ```
 将rules/profile.smk的21行中的sample.txt替换成sample_dup_merge.txt后，再运行流程即可。
 
@@ -184,3 +191,21 @@ python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt
 流程每次检查2.result/filter_summary.txt，和metaphlan3.profile.merge.txt来判断是否执行完毕。因此若在上一批样本跑完了全流程后，再追加样本时由于上两个文件已经生成了，就会显示Nothing to be done。
 
 若已经生成了结果文件，则删去结果文件夹即可。``` rm -r 2.result```。
+
+### 4. 更新计划
+1. 增加BWA去除宿主的选项。
+BWA在宏基因组比对过程中，会出现大量仅有局部比对上的soft clipping比对结果，该比对结果与reference的identity往往较低。此种策略在粪便，舌苔等低宿主率的样本中会将大量微生物的Reads丢掉。因此BWA适用于单基因组比对而不适合宏基因组比对。
+而生殖道等样本的宿主率高达98%以上，可近似看成单基因组的样本。为了尽可能避免人源reads对后续分析造成干扰，生殖道，血液等样本即可使用BWA比对，同时也可以与GATK等变异检测流程对接。
+
+2. 增加功能profile。
+HUMAnN，存储的中间结果过多，大量消耗盘阵，还需优化。
+
+### 5. 进一步阅读
+1. 宏基因组快速处理流程
+Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery 3
+2. profile工具评估
+Benchmarking Metagenomics Tools for Taxonomic Classification
+3. 种子序列长度与灵敏度之间的关系
+Aligner optimization increases accuracy and decreases compute times in multi-species sequence data
+4. 人和微生物序列的混杂对后续分析的干扰
+Contaminating DNA in human saliva alters the detection of variants from whole genome sequencing

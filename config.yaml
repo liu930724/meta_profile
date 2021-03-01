@@ -2,11 +2,12 @@ params:
     fastp:
       min_len : 30 # Recommended value >= 30
     rmhost:
-      bowtie2_index : "/ldfssz1/ST_META/share/User/tianliu/database/bowtie2_index/hg38"
+      bowtie2_index : "/ldfssz1/ST_META/share/User/tianliu/database/bowtie2_index/hg38/hg38" #hg38.p13
       threads: 8
     metaphlan3:
-      path: "/ldfssz1/ST_META/share/User/tianliu/bioenv/conda/envs/meta_assemble_wdl/metaphlan3" #Copy to your work dir and replace it!
-      threads: 4
+      bowtie2db: "/ldfssz1/ST_META/share/User/tianliu/database/metaphlan"
+      index: "mpa_v30_CHOCOPhlAn_201901"
+      threads: 8
 
 assay:
     trimming: "1.assay/01.trimming"
