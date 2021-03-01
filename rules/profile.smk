@@ -36,8 +36,8 @@ rule filter:
     output:
         trim_r1 = temp(os.path.join(config["assay"]["trimming"], "{sample}.trimmed.1.fq.gz")),
         trim_r2 = temp(os.path.join(config["assay"]["trimming"], "{sample}.trimmed.2.fq.gz")),
-        html = os.path.join(config["assay"]["trimming"], "html/{sample}.fastp.html"),
-        json = os.path.join(config["assay"]["trimming"], "json/{sample}.fastp.json"),
+        html = os.path.join(config["assay"]["trimming"], "{sample}.fastp.html"),
+        json = os.path.join(config["assay"]["trimming"], "{sample}.fastp.json"),
         rmhost_r1 = protected(os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.1.fq.gz")),
         rmhost_r2 = protected(os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.2.fq.gz"))
     params:
@@ -67,7 +67,7 @@ rule seqkit_stat:
 
 rule filter_summary:
     input:
-        trim = expand("{trim_res}/json/{sample}.fastp.json", trim_res = config["assay"]["trimming"], sample = _samples.index),
+        trim = expand("{trim_res}/{sample}.fastp.json", trim_res = config["assay"]["trimming"], sample = _samples.index),
         rmhost = expand("{rmhost_res}/{sample}.rmhost.reads.summary", rmhost_res = config["logs"]["rmhost"], sample = _samples.index)
     output:
         protected(os.path.join(config["results"], "filter_summary.txt"))
@@ -89,27 +89,30 @@ rule metaphlan3:
         r1 = os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.1.fq.gz"),
         r2 = os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.2.fq.gz")
     output:
-        protected(os.path.join(config["assay"]["profile"], "{sample}.mp3_unknown.profile"))
+        mpa = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.profile")),
+        vir = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3_vir.profile"))
     threads:
         config["params"]["metaphlan3"]["threads"]
     params:
-        vir = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3_vir.profile")),
+        bowtie2db = config["params"]["metaphlan3"]["bowtie2db"],
+        index = config["params"]["metaphlan3"]["index"],
         bw2 = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.bw2.bz2")),
-        mp3 = os.path.join(config['params']['metaphlan3']['path'], "metaphlan.py")
     shell:
         '''
-        {params.mp3} {input.r1},{input.r2} --nproc {threads} --input_type fastq --add_viruses --bowtie2out {params.bw2} -t rel_ab_w_read_stats --unknown_estimation > {params.vir}
-        {params.mp3} {params.bw2} --nproc {threads} --input_type bowtie2out --add_viruses -t rel_ab_w_read_stats > {output}
+        metaphlan {input.r1},{input.r2} --bowtie2db {params.bowtie2db} --index {params.index} --nproc {threads} --input_type fastq --bowtie2out {params.bw2} -t rel_ab_w_read_stats > {output.mpa}
+        metaphlan {params.bw2} --bowtie2db {params.bowtie2db} --index {params.index} --nproc {threads} --input_type bowtie2out --add_viruses -t rel_ab_w_read_stats > {output.vir}
         '''
 
 ### step4 profile_summary
 rule merge_profile:
     input:
-        unknown = expand("{profile_dir}/{sample}.mp3_unknown.profile", profile_dir = config["assay"]["profile"], sample = _samples.index),
+        mpa = expand("{profile_dir}/{sample}.mp3.profile", profile_dir = config["assay"]["profile"], sample = _samples.index),
         vir = expand("{profile_dir}/{sample}.mp3_vir.profile", profile_dir = config["assay"]["profile"], sample = _samples.index)
     output:
-        unknown = protected(os.path.join(config['results'], "metaphlan3_unknown.profile.merge.txt")),
-        vir = protected(os.path.join(config['results'], "metaphlan3_vir.profile.merge.txt"))
+        mpa_merge = protected(os.path.join(config['results'], "metaphlan3.profile.merge.txt")),
+        mpa_merge_vir = protected(os.path.join(config['results'], "metaphlan3_vir.profile.merge.txt"))
     shell:
-        "rules/merge_metaphlan_tables.py {input.unknown} > {output.unknown}"
-        "rules/merge_metaphlan_tables.py {input.vir} > {output.vir}"
+        '''
+        python rules/merge_metaphlan_tables.py {input.mpa} > {output.mpa_merge}
+        python rules/merge_metaphlan_tables.py {input.vir} > {output.mpa_merge_vir}
+        '''
