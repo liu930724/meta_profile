@@ -97,7 +97,7 @@ nohup sh work.sh &
 
 早期BGISEQ测序平台下机reads中间部分会出现零散的质量较差的碱基，cOMG流程中的OAs1修剪方案专门针对此情况进行了优化。OAs1会从头识别整段read，若中间出现低质量碱基，则会修剪掉后半段碱基。该策略会尽可能保留多的reads，但会损失大量的base(>10%)。Reads更多有利于profiling，但损失大量的base不利于组装。
 
-现在BGISEQ测序平台的测序质量已经大大提高，总体Q30%已经到了90%。并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。BGISEQ测序平台下机默认去除了接头序列，无需再对接头进行处理。
+现在BGISEQ测序平台的测序质量已经大大提高，总体Q30%已经到了90%。并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。默认的接头为BGISEQ测序平台，若为其他测序平台需要在config文件中自行替换接头序列。
 
 #### 2.2 Remove host component
 
