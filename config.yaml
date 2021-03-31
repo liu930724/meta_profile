@@ -1,6 +1,8 @@
 params:
     fastp:
       min_len : 30 # Recommended value >= 30
+      adapter_r1: "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA" #BGI-SEQ
+      adapter_r2: "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG" #BGI-SEQ
     rmhost:
       bowtie2_index : "/ldfssz1/ST_META/share/User/tianliu/database/bowtie2_index/hg38/hg38" #hg38.p13
       threads: 8

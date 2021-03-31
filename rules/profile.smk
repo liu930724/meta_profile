@@ -42,6 +42,8 @@ rule filter:
         rmhost_r2 = protected(os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.2.fq.gz"))
     params:
         min_len = config["params"]["fastp"]["min_len"],
+        ad_r1 = config["params"]["fastp"]["adapter_r1"],
+        ad_r2 = config["params"]["fastp"]["adapter_r2"],
         index = config["params"]["rmhost"]["bowtie2_index"]
     threads:
         config["params"]["rmhost"]["threads"]
@@ -51,7 +53,7 @@ rule filter:
     run:
         shell(
         '''
-        fastp -i {input.r1} -I {input.r2} -o {output.trim_r1} -O {output.trim_r2} -w {threads} --length_required {params.min_len} --disable_adapter_trimming -j {output.json} -h {output.html} 2> {log.fastp_log}
+        fastp -i {input.r1} -I {input.r2} -o {output.trim_r1} -O {output.trim_r2} -w {threads} --length_required {params.min_len} --adapter_sequence={params.ad_r1} --adapter_sequence_r2={params.ad_r2} -j {output.json} -h {output.html} 2> {log.fastp_log}
 
         bowtie2 --end-to-end --very-sensitive -p {threads} -x {params.index} -1 {output.trim_r1} -2 {output.trim_r2} 2> {log.bowtie2_log} | samtools fastq -N -c 5 -f 12 -1 {output.rmhost_r1} -2 {output.rmhost_r2} -
         ''')
