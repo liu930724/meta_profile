@@ -1,6 +1,6 @@
 params:
     fastp:
-      min_len : 30 # Recommended value >= 30
+      min_len : 70 # Recommended value >= 50
       adapter_r1: "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA" #BGI-SEQ
       adapter_r2: "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG" #BGI-SEQ
     rmhost:
