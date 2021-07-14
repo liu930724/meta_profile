@@ -53,7 +53,7 @@ rule filter:
     run:
         shell(
         '''
-        fastp -i {input.r1} -I {input.r2} -o {output.trim_r1} -O {output.trim_r2} -w {threads} --length_required {params.min_len} --adapter_sequence={params.ad_r1} --adapter_sequence_r2={params.ad_r2} -j {output.json} -h {output.html} 2> {log.fastp_log}
+        fastp -i {input.r1} -I {input.r2} -o {output.trim_r1} -O {output.trim_r2} -w {threads} --length_required {params.min_len} -j {output.json} -h {output.html} 2> {log.fastp_log}
 
         bowtie2 --end-to-end --very-sensitive -p {threads} -x {params.index} -1 {output.trim_r1} -2 {output.trim_r2} 2> {log.bowtie2_log} | samtools fastq -N -c 5 -f 12 -1 {output.rmhost_r1} -2 {output.rmhost_r2} -
         ''')
@@ -91,30 +91,30 @@ rule metaphlan3:
         r1 = os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.1.fq.gz"),
         r2 = os.path.join(config["assay"]["rmhost"], "{sample}.rmhost.2.fq.gz")
     output:
+        bw2 = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.bw2.bz2")),
         mpa = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.profile")),
-        vir = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3_vir.profile"))
+        unknown = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.unknown.profile"))
     threads:
         config["params"]["metaphlan3"]["threads"]
     params:
         bowtie2db = config["params"]["metaphlan3"]["bowtie2db"],
-        index = config["params"]["metaphlan3"]["index"],
-        bw2 = protected(os.path.join(config["assay"]["profile"], "{sample}.mp3.bw2.bz2")),
+        index = config["params"]["metaphlan3"]["index"]
     shell:
         '''
-        metaphlan {input.r1},{input.r2} --bowtie2db {params.bowtie2db} --index {params.index} --nproc {threads} --input_type fastq --bowtie2out {params.bw2} -t rel_ab_w_read_stats > {output.mpa}
-        metaphlan {params.bw2} --bowtie2db {params.bowtie2db} --index {params.index} --nproc {threads} --input_type bowtie2out --add_viruses -t rel_ab_w_read_stats > {output.vir}
+        metaphlan {input.r1},{input.r2} --bowtie2db {params.bowtie2db} --index {params.index} --nproc {threads} --input_type fastq --bowtie2out {output.bw2} --add_viruses > {output.mpa}
+        metaphlan {output.bw2} --nproc {threads} --input_type bowtie2out --add_viruses --unknown_estimation > {output.unknown}
         '''
 
 ### step4 profile_summary
 rule merge_profile:
     input:
         mpa = expand("{profile_dir}/{sample}.mp3.profile", profile_dir = config["assay"]["profile"], sample = _samples.index),
-        vir = expand("{profile_dir}/{sample}.mp3_vir.profile", profile_dir = config["assay"]["profile"], sample = _samples.index)
+        unknown = expand("{profile_dir}/{sample}.mp3.unknown.profile", profile_dir = config["assay"]["profile"], sample = _samples.index)
     output:
         mpa_merge = protected(os.path.join(config['results'], "metaphlan3.profile.merge.txt")),
-        mpa_merge_vir = protected(os.path.join(config['results'], "metaphlan3_vir.profile.merge.txt"))
+        mpa_merge_unknown = protected(os.path.join(config['results'], "metaphlan3.unknown.profile.merge.txt"))
     shell:
         '''
         python rules/merge_metaphlan_tables.py {input.mpa} > {output.mpa_merge}
-        python rules/merge_metaphlan_tables.py {input.vir} > {output.mpa_merge_vir}
+        python rules/merge_metaphlan_tables.py {input.unknown} > {output.mpa_merge_unknown}
         '''
