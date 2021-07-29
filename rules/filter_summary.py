@@ -9,7 +9,7 @@ import json
 import pandas
 
 def trim_stat(fastp_json):
-    fastp_sample = os.path.basename(fastp_json).rstrip(".fastp.json")
+    fastp_sample = os.path.basename(fastp_json).replace(".fastp.json","")
     with open(fastp_json, 'r') as f:
         OA_json = json.load(f)
     reads_before = OA_json.get('summary').get('before_filtering').get('total_reads')
@@ -46,9 +46,9 @@ def main():
             )
     parser.add_argument("-t", "--trim", help = "trimming summary", action='store_true')
     parser.add_argument("-r", "--rmhost", help = "rmhost summary", action='store_true')
-    parser.add_argument("infiles", 
-        metavar = "*.json or 1.json 2.json 3.json etc.", 
-        nargs = "+", 
+    parser.add_argument("infiles",
+        metavar = "*.json or 1.json 2.json 3.json etc.",
+        nargs = "+",
         help = "One or more fastp.json to join")
 
     args = parser.parse_args()
