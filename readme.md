@@ -1,10 +1,10 @@
 ### 1. meta_profile简介及使用
 meta_profile v1.0，集合trimming，remove host，metaphlan3的宏基因组快速profile流程。
 
-更全面的宏基因组分析流程见朱杰的metapi。
+更全面的宏基因组分析流程见朱杰的[metapi](https://github.com/ohmeta/metapi)。
 
 #### 1.2 安装
-+ 使用conda安装相关依赖。conda相关教程见 https://biogit.cn/TianLiu/meta_course/wikis/c1.p3.Conda.
++ 使用conda安装相关依赖。
 ```shell
 conda env create -n meta_profile -f rules/env.yaml
 conda activate meta_profile
@@ -13,10 +13,10 @@ conda activate meta_profile
 + 如果你在BGI的集群上，可直接加载工作环境。
 ```shell
 # solution1 : use full env path
-conda activate /ldfssz1/ST_META/share/User/tianliu/bioenv/conda/envs/meta_profile
+conda activate /ldfssz1/ST_META/share/User/tianliu/bioenv/conda_centos7/envs/bioenv
 
 # solution2 : use ~/.conda/environments.txt
-echo "/ldfssz1/ST_META/share/User/tianliu/bioenv/conda/envs/meta_profile" >> ~/.conda/environments.txt
+echo "/ldfssz1/ST_META/share/User/tianliu/bioenv/conda_centos7/envs/bioenv" >> ~/.conda/environments.txt
 conda activate meta_profile
 ```
 
@@ -97,7 +97,7 @@ nohup sh work.sh &
 
 早期BGISEQ测序平台下机reads中间部分会出现零散的质量较差的碱基，cOMG流程中的OAs1修剪方案专门针对此情况进行了优化。OAs1会从头识别整段read，若中间出现低质量碱基，则会修剪掉后半段碱基。该策略会尽可能保留多的reads，但会损失大量的base(>10%)。Reads更多有利于profiling，但损失大量的base不利于组装。
 
-现在BGISEQ测序平台的测序质量已经大大提高，总体Q30%已经到了90%。并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。默认的接头为BGISEQ测序平台，若为其他测序平台需要在config文件中自行替换接头序列。
+现在BGISEQ测序平台的测序质量已经大大提高，总体Q30%已经到了90%。并且SPAdes组装器会对reads先纠错后组装。因此本流程过滤采用fastp的默认模式，仅对reads两端的低质量序列进行修剪。默认由程序自动识别接头序列。
 
 #### 2.2 Remove host component
 
@@ -193,14 +193,17 @@ python rules/merge_multi_fq.py sample_dup.txt sample_dup_merge.txt
 若已经生成了结果文件，则删去结果文件夹即可。``` rm -r 2.result```。
 
 ### 4. 更新计划
-1. 增加BWA去除宿主的选项。
-BWA在宏基因组比对过程中，会出现大量仅有局部比对上的soft clipping比对结果，该比对结果与reference的identity往往较低。此种策略在粪便，舌苔等低宿主率的样本中会将大量微生物的Reads丢掉。因此BWA适用于单基因组比对而不适合宏基因组比对。
-而生殖道等样本的宿主率高达98%以上，可近似看成单基因组的样本。为了尽可能避免人源reads对后续分析造成干扰，生殖道，血液等样本即可使用BWA比对，同时也可以与GATK等变异检测流程对接。
+1. 增加Kraken2/Bracken, coverM, UniqAlign的微生物定量方法。
 
 2. 增加功能profile。
-HUMAnN，存储的中间结果过多，大量消耗盘阵，还需优化。
+HUMAnN，存储的中间结果过多，大量消耗盘阵，待优化。
 
-### 5. 进一步阅读
+### 5. 存在的问题
+1 MetaPhlAn中枯草芽孢杆菌的分类出错，可能存在其他分类错误。
+2 数据库扩大后，MetaPhlAn结果中物种可能是多个物种的集合(additional_species)。
+3 由问题2导致的，HUMAnN根据MetaPhlAn结果选取的物种泛基因组可能存在问题。
+
+### 6. 进一步阅读
 1. 宏基因组快速处理流程
 Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery 3
 2. profile工具评估
